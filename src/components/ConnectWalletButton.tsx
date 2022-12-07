@@ -37,6 +37,7 @@ const ConnectWalletButton: React.FC<Props> = ({
   const { onClose, isOpen, onOpen } = useDisclosure();
 
   useEffect(() => {
+    // @ts-ignore
     if (window!.solana) {
       setIsPhantom(true);
     }

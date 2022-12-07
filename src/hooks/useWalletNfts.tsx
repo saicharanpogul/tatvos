@@ -32,7 +32,10 @@ const useWalletNfts = () => {
               const ownedByCmd = _mintedByWallet.filter((_nft) =>
                 _mintedByCmd.find(
                   (__nft) =>
-                    __nft.mintAddress.toBase58() === _nft.mintAddress.toBase58()
+                    // @ts-ignore
+                    __nft?.mintAddress.toBase58() ===
+                    // @ts-ignore
+                    _nft?.mintAddress.toBase58()
                 )
               );
               if (ownedByCmd.length > 0) {

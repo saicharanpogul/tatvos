@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 const theme = extendTheme({
   colors,
   styles: {
-    global: (props) => ({
+    global: () => ({
       "html, body": {
         background: colors.background,
       },
