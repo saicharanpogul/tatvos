@@ -7,11 +7,13 @@ import {
   PopoverContent,
   PopoverTrigger,
   useDisclosure,
+  useMediaQuery,
   useToast,
 } from "@chakra-ui/react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PhantomWalletName } from "@solana/wallet-adapter-wallets";
 import React, { useCallback, useEffect, useState } from "react";
+import usePhantom from "../hooks/usePhantom";
 import { truncateAddress } from "../utils";
 
 interface WithChildren {
@@ -29,18 +31,19 @@ const ConnectWalletButton: React.FC<Props> = ({
   onChildClick,
   style,
 }) => {
-  const [isPhantom, setIsPhantom] = useState(false);
+  const isPhantom = usePhantom();
   const { connected, connect, select, disconnect, publicKey, wallet } =
     useWallet();
   const [base58, setBase58] = useState("");
   const toast = useToast();
   const { onClose, isOpen, onOpen } = useDisclosure();
+  const [isMobileOrTablet] = useMediaQuery("(min-width: 600px)");
+  const isWindowContext = typeof window !== "undefined";
+  const origin = isWindowContext && window.origin;
+
+  useEffect(() => {}, [isPhantom]);
 
   useEffect(() => {
-    // @ts-ignore
-    if (window!.solana) {
-      setIsPhantom(true);
-    }
     wallet?.adapter.addListener("error", (error) => {
       toast({
         title: error.name,
@@ -108,7 +111,14 @@ const ConnectWalletButton: React.FC<Props> = ({
             onClick={
               isPhantom
                 ? connectWallet
-                : () => window.open("https://phantom.app")
+                : () => {
+                    if (!isMobileOrTablet) {
+                      return window.open(
+                        `https://phantom.app/ul/browse/https://tatvos.saicharanpogul.xyz`
+                      );
+                    }
+                    return window.open("https://phantom.app");
+                  }
             }
           >
             {children

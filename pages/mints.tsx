@@ -179,7 +179,7 @@ const Mints = () => {
             isIndeterminate
             color="grey"
           />
-          <Text color="text">Loading Nfts...</Text>
+          <Text color="text">Syncing Nfts...</Text>
         </Flex>
       )}
       <Flex justifyContent={"center"}>

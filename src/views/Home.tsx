@@ -14,9 +14,11 @@ import React from "react";
 import { ConnectWalletButton } from "../components";
 import useWalletNfts from "../hooks/useWalletNfts";
 import styles from "../../styles/View.module.css";
+import usePhantom from "../hooks/usePhantom";
 
 const Home = () => {
   const wallet = useWallet();
+  const isPhantom = usePhantom();
   const { connected } = wallet;
   const router = useRouter();
   const { isCmdNftMinted, isLoading, refreshNfts } = useWalletNfts();
@@ -58,7 +60,7 @@ const Home = () => {
             </>
           ) : (
             <>
-              <Text>Connect Wallet</Text>
+              <Text>{isPhantom ? "Connect Wallet" : "Install Phantom"}</Text>
               <ArrowForwardIcon />
             </>
           )}
@@ -103,7 +105,7 @@ const Home = () => {
             color="grey"
           /> */}
           <Text color="text" fontSize={"sm"}>
-            Loading Nfts...
+            Syncing Nfts...
           </Text>
         </Flex>
       )}
