@@ -177,7 +177,9 @@ const NewMint = () => {
   useEffect(() => {}, [isStaked]);
 
   useEffect(() => {
-    getNftData();
+    getNftData().then(async () => {
+      await checkStakingStatus();
+    });
   }, []);
 
   useEffect(() => {
