@@ -7,6 +7,7 @@ import { colors } from "../src/theme";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
+import { WorkspaceProvider } from "../src/components/WorkplaceProvider";
 
 const theme = extendTheme({
   colors,
@@ -42,25 +43,27 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ChakraProvider theme={theme}>
       <WalletContextProvider>
-        <Box height={"100vh"}>
-          <MyApp />
-          <Component {...pageProps} />
-          <Flex
-            justifyContent="center"
-            flexDirection="column"
-            alignItems="center"
-          >
-            <Button variant={"link"} marginTop="10" marginBottom="10">
-              <a
-                href="https://twitter.com/_buildspace?s=20&t=fAnBQXcDi_fmO7e9TzptTQ"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                built with @buildspace
-              </a>
-            </Button>
-          </Flex>
-        </Box>
+        <WorkspaceProvider>
+          <Box height={"100vh"}>
+            <MyApp />
+            <Component {...pageProps} />
+            <Flex
+              justifyContent="center"
+              flexDirection="column"
+              alignItems="center"
+            >
+              <Button variant={"link"} marginTop="10" marginBottom="10">
+                <a
+                  href="https://twitter.com/_buildspace?s=20&t=fAnBQXcDi_fmO7e9TzptTQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  built with @buildspace
+                </a>
+              </Button>
+            </Flex>
+          </Box>
+        </WorkspaceProvider>
       </WalletContextProvider>
     </ChakraProvider>
   );

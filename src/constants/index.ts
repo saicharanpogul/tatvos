@@ -1,6 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
-export const CANDY_MACHINE_ID = "6c3eVkmukPhBLt9FnQC1UbfB5r1e8YdopGLmmA1ZPYBK";
+export const CANDY_MACHINE_ID = "9XvG2s8DNwkcTGNrSubLTqCwbxHJuxFW3SokXjk7jGLo";
+// export const CANDY_MACHINE_ID = "6c3eVkmukPhBLt9FnQC1UbfB5r1e8YdopGLmmA1ZPYBK";
 // export const NFT_STAKING_PROGRAM_ID =
 //   "BXQuRiYccLrAmjJ5GduRk1EDGQ6HAYstQA7aNvxmdtRW";
 export const NFT_STAKING_PROGRAM_ID =

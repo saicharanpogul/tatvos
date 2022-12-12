@@ -21,7 +21,7 @@ const Home = () => {
   const isPhantom = usePhantom();
   const { connected } = wallet;
   const router = useRouter();
-  const { isCmdNftMinted, isLoading, refreshNfts } = useWalletNfts();
+  const { isCmdNftMinted, isLoading, getNfts } = useWalletNfts();
   return (
     <Flex
       justifyContent="center"
@@ -75,7 +75,6 @@ const Home = () => {
             color={"text"}
             marginTop="10"
             onClick={() => router.push("/mints")}
-            onDoubleClick={refreshNfts}
           >
             you already hold some tatvos!
           </Button>
@@ -88,7 +87,7 @@ const Home = () => {
           color={"text"}
           cursor="pointer"
           marginTop={"4"}
-          onClick={!isLoading ? refreshNfts : () => {}}
+          onClick={!isLoading ? getNfts : () => {}}
           className={isLoading ? styles.rotate : undefined}
         />
       )}

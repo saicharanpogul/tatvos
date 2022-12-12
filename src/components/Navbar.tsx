@@ -14,7 +14,7 @@ const Navbar = () => {
           cursor={"pointer"}
           onClick={() => router.replace("/")}
         >
-          Tatvos
+          tatvos
         </Heading>
         <ConnectWalletButton />
       </Flex>

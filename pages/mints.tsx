@@ -1,22 +1,12 @@
 import {
   Box,
-  Button,
   CircularProgress,
   Container,
   Flex,
   Grid,
   GridItem,
-  HStack,
   Image,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Text,
-  useDisclosure,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import _ from "lodash";
@@ -25,7 +15,7 @@ import {
   ChevronRightIcon,
   RepeatIcon,
 } from "@chakra-ui/icons";
-import { Back, Info, PageMeta } from "../src/components";
+import { Back, PageMeta } from "../src/components";
 import useWalletNfts from "../src/hooks/useWalletNfts";
 import styles from "../styles/View.module.css";
 import { useRouter } from "next/router";
@@ -35,8 +25,7 @@ const Mints = () => {
   const [page, setPage] = useState(1);
   const [pageItems, setPageItems] = useState<Metadata[]>();
   const [isLoading, setLoading] = useState(false);
-  const { refreshNfts, isLoading: isNftLoading } = useWalletNfts();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { getNfts, isLoading: isNftLoading } = useWalletNfts();
   const [data, setData] = useState<{ offChain: Metadata; onChain: NFT }[]>();
   const router = useRouter();
 
@@ -54,7 +43,7 @@ const Mints = () => {
       }
       setPageItems(nftData);
       setData(_data);
-      console.log("data", _data);
+      // console.log("data", _data);
     } catch (error) {
       console.log(error);
     } finally {
@@ -93,22 +82,36 @@ const Mints = () => {
   }, [nfts, page]);
   return (
     <Container maxW="xl">
-      <PageMeta title="Mints" />
+      <PageMeta title="mints" />
       <Flex
         flexDirection="column"
         alignItems={"center"}
         justifyContent="center"
       >
         <Flex width={"100%"} marginBottom={"10"} justifyContent="space-between">
-          <RepeatIcon
-            alignSelf={"flex-end"}
-            height={"6"}
-            width="6"
-            color={"text"}
-            cursor="pointer"
-            onClick={!isNftLoading ? refreshNfts : () => {}}
-            className={isNftLoading ? styles.rotate : undefined}
-          />
+          <Flex>
+            <RepeatIcon
+              alignSelf={"flex-end"}
+              height={"6"}
+              width="6"
+              color={"text"}
+              cursor="pointer"
+              onClick={
+                !isNftLoading
+                  ? async () => {
+                      await getNfts();
+                      await getPage(page, 6);
+                    }
+                  : () => {}
+              }
+              className={isNftLoading ? styles.rotate : undefined}
+            />
+            {isNftLoading && (
+              <Text ml="2" color="text">
+                Syncing Nfts...
+              </Text>
+            )}
+          </Flex>
           <Box>
             <ChevronLeftIcon
               height="6"
@@ -123,15 +126,25 @@ const Mints = () => {
               height="6"
               width="6"
               color={
-                nfts!.length > 6 && page * 6 !== nfts!.length ? "text" : "grey"
+                nfts!.length > 6 &&
+                page * 6 !== nfts!.length &&
+                pageItems!.length === 6
+                  ? "text"
+                  : "grey"
               }
               cursor={
-                nfts!.length > 6 && page * 6 !== nfts!.length
+                nfts!.length > 6 &&
+                page * 6 !== nfts!.length &&
+                pageItems!.length === 6
                   ? "pointer"
                   : "not-allowed"
               }
               onClick={
-                nfts!.length > 6 && page * 6 !== nfts!.length ? next : () => {}
+                nfts!.length > 6 &&
+                page * 6 !== nfts!.length &&
+                pageItems!.length === 6
+                  ? next
+                  : () => {}
               }
             />
           </Box>
@@ -167,21 +180,6 @@ const Mints = () => {
             ))}
         </Grid>
       </Flex>
-      {isLoading && (
-        <Flex
-          justifyContent={"center"}
-          alignItems="center"
-          flexDirection={"column"}
-        >
-          <CircularProgress
-            marginTop="10"
-            size="8"
-            isIndeterminate
-            color="grey"
-          />
-          <Text color="text">Syncing Nfts...</Text>
-        </Flex>
-      )}
       <Flex justifyContent={"center"}>
         <Back />
       </Flex>

@@ -11,7 +11,7 @@ const PageMeta: React.FC<Props> = ({ title, description, ogImage }) => {
   return (
     <>
       <Head>
-        <title>{title ? `${title} | Tatvos` : "Tatvos"}</title>
+        <title>{title ? `${title} | tatvos` : "tatvos"}</title>
         <meta
           name="description"
           content={description ? description : "List of all your social links."}

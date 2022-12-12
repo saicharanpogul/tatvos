@@ -72,13 +72,10 @@ const useWalletNfts = () => {
       }
     }
   }, [getNfts, metaplex, refresh, wallet.connected]);
-  const refreshNfts = () => {
-    setRefresh(true);
-  };
   return {
     isCmdNftMinted: doesOwnCmdNft,
     isLoading: isLoadingNfts,
-    refreshNfts,
+    getNfts,
   };
 };
 

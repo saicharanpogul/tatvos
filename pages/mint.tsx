@@ -24,6 +24,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { CANDY_MACHINE_ID } from "../src/constants";
 import { useRouter } from "next/router";
 import { Back, PageMeta } from "../src/components";
+import useWalletNfts from "../src/hooks/useWalletNfts";
 
 const Mint = () => {
   const wallet = useWallet();
@@ -31,6 +32,7 @@ const Mint = () => {
   const [candyMachine, setCandyMachine] = useState<CandyMachineV2>();
   const [isMinting, setIsMinting] = useState(false);
   const router = useRouter();
+  const { getNfts } = useWalletNfts();
 
   const metaplex = useMemo(
     () => Metaplex.make(connection).use(walletAdapterIdentity(wallet)),
@@ -55,12 +57,13 @@ const Mint = () => {
       if (event.defaultPrevented) return;
       if (!wallet.connected || !candyMachine) return;
       try {
-        // const nft = await metaplex.candyMachinesV2().mint({
-        //   candyMachine: candyMachine,
-        // });
-        // console.log(nft);
-        // router.push(`/${nft.nft.address.toBase58()}`);
-        router.push(`/H9Mei7jM5KJZdWFB8kb8nS7V3GK9EVRb2TMjHERfScuq`);
+        const nft = await metaplex.candyMachinesV2().mint({
+          candyMachine: candyMachine,
+        });
+        console.log(nft);
+        await getNfts();
+        router.push(`/${nft.nft.address.toBase58()}`);
+        // router.push(`/H9Mei7jM5KJZdWFB8kb8nS7V3GK9EVRb2TMjHERfScuq`);
       } catch (error) {
         console.error(error);
       } finally {
@@ -71,7 +74,7 @@ const Mint = () => {
   );
   return (
     <Container maxW="container.xl">
-      <PageMeta title="Mint" />
+      <PageMeta title="mint" />
       <Flex
         justifyContent={"center"}
         flexDirection="column"
@@ -81,14 +84,6 @@ const Mint = () => {
         <Heading color={"text"} textAlign="center">
           Mint your Tatvos and earn 1 to 2.5 $TOS per day.
         </Heading>
-        {/* <Text
-          color={"text"}
-          textAlign="center"
-          fontSize={"lg"}
-          fontWeight="medium"
-        >
-          {`Earn 86,000 * rand(<shells>) / 1B = $TOS`}
-        </Text> */}
         <Image
           marginTop="10"
           alignSelf="center"
