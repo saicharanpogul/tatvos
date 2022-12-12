@@ -22,18 +22,8 @@ import {
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
-  Grid,
-  GridItem,
-  Popover,
 } from "@chakra-ui/react";
-import {
-  Metaplex,
-  Nft,
-  NftWithToken,
-  Sft,
-  SftWithToken,
-  walletAdapterIdentity,
-} from "@metaplex-foundation/js";
+import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import _ from "lodash";
@@ -79,9 +69,7 @@ const NewMint = () => {
   const [claiming, setClaiming] = useState(false);
   const [unstaking, setUnstaking] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [nftData, setNftData] = useState<
-    Sft | SftWithToken | Nft | NftWithToken
-  >();
+  const [nftData, setNftData] = useState<any>();
   const metaplex = useMemo(() => Metaplex.make(connection), [connection]);
   const { mintAddress } = router.query;
   const mint = useMemo(
