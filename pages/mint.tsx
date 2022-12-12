@@ -82,7 +82,7 @@ const Mint = () => {
         marginTop="16"
       >
         <Heading color={"text"} textAlign="center">
-          Mint your Tatvos and earn 1 to 2.5 $TOS per day.
+          Mint your Tatvos and earn $TOS everyday.
         </Heading>
         <Image
           marginTop="10"

@@ -70,7 +70,10 @@ const NewMint = () => {
   const [unstaking, setUnstaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [nftData, setNftData] = useState<any>();
-  const metaplex = useMemo(() => Metaplex.make(connection), [connection]);
+  const mx = useMemo(
+    () => Metaplex.make(connection).use(walletAdapterIdentity(walletAdapter)),
+    [connection]
+  );
   const { mintAddress } = router.query;
   const mint = useMemo(
     () => (mintAddress && new PublicKey(mintAddress)) as PublicKey,
@@ -83,8 +86,7 @@ const NewMint = () => {
 
   useEffect(() => {
     if (!mint) return;
-    metaplex
-      .nfts()
+    mx.nfts()
       .findByMint({ mintAddress: new PublicKey(mint) })
       .then(async (nft) => {
         const res = await fetch(nft.uri);
@@ -97,16 +99,13 @@ const NewMint = () => {
         setClaimable((10 * (max / block)).toFixed(2));
       })
       .catch((error) => console.error(error));
-  }, [metaplex, mint]);
+  }, [mx, mint]);
 
   const getNftData = async () => {
     setLoading(true);
     if (!mint) {
       return;
     }
-    const mx = Metaplex.make(connection).use(
-      walletAdapterIdentity(walletAdapter)
-    );
     try {
       mx.nfts()
         .findByMint({ mintAddress: mint as PublicKey })
@@ -174,13 +173,9 @@ const NewMint = () => {
     }
   }, [connection, nftTokenAccount, walletAdapter]);
 
-  useEffect(() => {}, [isStaked]);
-
   useEffect(() => {
-    getNftData().then(async () => {
-      await checkStakingStatus();
-    });
-  }, []);
+    getNftData();
+  }, [connection, mint, walletAdapter]);
 
   useEffect(() => {
     checkStakingStatus();
