@@ -114,6 +114,9 @@ const NewMint = () => {
           console.log("nft data on stake page:", nft);
           setNftData(nft);
           console.log("Data", nft.json);
+          connection
+            .getTokenLargestAccounts(nft.mint.address)
+            .then((accounts) => setNftTokenAccount(accounts.value[0].address));
         });
     } catch (error) {
       console.log("error getting nft:", error);
@@ -174,17 +177,12 @@ const NewMint = () => {
   useEffect(() => {}, [isStaked]);
 
   useEffect(() => {
-    checkStakingStatus();
-    if (nftData) {
-      connection
-        .getTokenLargestAccounts(nftData.mint.address)
-        .then((accounts) => setNftTokenAccount(accounts.value[0].address));
-    }
-  }, [walletAdapter, connection, nftData, staking, claiming, unstaking]);
-
-  useEffect(() => {
     getNftData();
   }, []);
+
+  useEffect(() => {
+    checkStakingStatus();
+  }, [walletAdapter, connection, nftData, staking, claiming, unstaking]);
 
   const sendAndConfirmTransaction = useCallback(
     async (transaction: Transaction) => {
