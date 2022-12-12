@@ -58,6 +58,7 @@ const getStakeAccount = async (
 
 const NewMint = () => {
   const { connection } = useConnection();
+  const walletAdapter = useWallet();
   const [metadata, setMetadata] = useState<Metadata>();
   const router = useRouter();
   const { checkIsDisabled } = useLimit();
@@ -81,7 +82,6 @@ const NewMint = () => {
   );
   const { isOpen, onOpen, onClose } = useDisclosure();
   const workspace = useWorkSpace();
-  const walletAdapter = useWallet();
   const [nftTokenAccount, setNftTokenAccount] = useState<PublicKey>();
 
   useEffect(() => {
