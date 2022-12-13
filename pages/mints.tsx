@@ -8,7 +8,7 @@ import {
   Image,
   Text,
 } from "@chakra-ui/react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import _ from "lodash";
 import {
   ChevronLeftIcon,
@@ -25,31 +25,35 @@ const Mints = () => {
   const [page, setPage] = useState(1);
   const [pageItems, setPageItems] = useState<Metadata[]>();
   const [isLoading, setLoading] = useState(false);
-  const { getNfts, isLoading: isNftLoading } = useWalletNfts();
+  const { getNfts, isLoading: isNftLoading } = useWalletNfts(false);
   const [data, setData] = useState<{ offChain: Metadata; onChain: NFT }[]>();
   const router = useRouter();
 
-  const getPage = async (page: number, perPage: number) => {
-    try {
-      setLoading(true);
-      const pageItems = nfts.slice((page - 1) * perPage, page * perPage);
-      let nftData: Metadata[] = [];
-      let _data: { offChain: Metadata; onChain: NFT }[] = [];
-      for (let i = 0; i < pageItems.length; i++) {
-        let result = await fetch(pageItems[i].uri);
-        const data = await result.json();
-        nftData.push(data);
-        _data.push({ onChain: pageItems[i], offChain: data });
+  const getPage = useCallback(
+    async (page: number, perPage: number) => {
+      try {
+        setLoading(true);
+        const pageItems = nfts.slice((page - 1) * perPage, page * perPage);
+        let nftData: Metadata[] = [];
+        let _data: { offChain: Metadata; onChain: NFT }[] = [];
+        for (let i = 0; i < pageItems.length; i++) {
+          let result = await fetch(pageItems[i].uri);
+          const data = await result.json();
+          nftData.push(data);
+          _data.push({ onChain: pageItems[i], offChain: data });
+        }
+        setPageItems(nftData);
+        setData(_data);
+        // console.log("data", _data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
       }
-      setPageItems(nftData);
-      setData(_data);
-      // console.log("data", _data);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [nfts]
+  );
+
   const getNftsAndMetadata = async () => {
     try {
       const _nfts = localStorage.getItem("walletCmdNfts");
@@ -70,16 +74,17 @@ const Mints = () => {
   const next = async () => {
     setPage(page + 1);
   };
+
   useEffect(() => {
     getNftsAndMetadata();
-  }, []);
+  }, [isNftLoading]);
 
   useEffect(() => {
     if (!nfts) {
       return;
     }
     getPage(page, 6);
-  }, [nfts, page]);
+  }, [nfts, page, isNftLoading]);
   return (
     <Container maxW="xl">
       <PageMeta title="mints" />

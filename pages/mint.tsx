@@ -32,7 +32,7 @@ const Mint = () => {
   const [candyMachine, setCandyMachine] = useState<CandyMachineV2>();
   const [isMinting, setIsMinting] = useState(false);
   const router = useRouter();
-  const { getNfts } = useWalletNfts();
+  const { getNfts } = useWalletNfts(false);
 
   const metaplex = useMemo(
     () => Metaplex.make(connection).use(walletAdapterIdentity(wallet)),

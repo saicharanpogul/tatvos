@@ -21,7 +21,7 @@ const Home = () => {
   const isPhantom = usePhantom();
   const { connected } = wallet;
   const router = useRouter();
-  const { isCmdNftMinted, isLoading, getNfts } = useWalletNfts();
+  const { isLoading, getNfts, nfts } = useWalletNfts(true);
   return (
     <Flex
       justifyContent="center"
@@ -66,7 +66,7 @@ const Home = () => {
           )}
         </HStack>
       </ConnectWalletButton>
-      {connected && isCmdNftMinted && (
+      {connected && nfts && (
         <>
           <Button
             variant={"outline"}
@@ -91,7 +91,7 @@ const Home = () => {
           className={isLoading ? styles.rotate : undefined}
         />
       )}
-      {isLoading && (
+      {connected && isLoading && (
         <Flex
           justifyContent={"center"}
           alignItems="center"

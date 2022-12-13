@@ -22,8 +22,16 @@ import {
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
+  useToast,
 } from "@chakra-ui/react";
-import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
+import {
+  Metaplex,
+  Nft,
+  NftWithToken,
+  Sft,
+  SftWithToken,
+  walletAdapterIdentity,
+} from "@metaplex-foundation/js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import _ from "lodash";
@@ -69,12 +77,17 @@ const NewMint = () => {
   const [staking, setStaking] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [unstaking, setUnstaking] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [nftData, setNftData] = useState<any>();
+  const [loading, setLoading] = useState(true);
+  const [maxAtomicNumber, setMaxAtomicNumber] = useState(0);
+  const [blockNumber, setBlockNumber] = useState(0);
+  const [nftData, setNftData] = useState<
+    Sft | SftWithToken | Nft | NftWithToken
+  >();
   const mx = useMemo(
     () => Metaplex.make(connection).use(walletAdapterIdentity(walletAdapter)),
     [connection]
   );
+  const toast = useToast();
   const { mintAddress } = router.query;
   const mint = useMemo(
     () => (mintAddress && new PublicKey(mintAddress)) as PublicKey,
@@ -84,102 +97,119 @@ const NewMint = () => {
   const workspace = useWorkSpace();
   const [nftTokenAccount, setNftTokenAccount] = useState<PublicKey>();
 
-  useEffect(() => {
+  const getMintAccount = useCallback(async () => {
     if (!mint) return;
-    mx.nfts()
-      .findByMint({ mintAddress: new PublicKey(mint) })
-      .then(async (nft) => {
-        const res = await fetch(nft.uri);
-        const json = await res.json();
-        const atomicNumber = parseInt(json.attributes[0].value);
-        setMetadata(json);
-        const numbers = getBlockAtomicNumbers(atomicNumber);
-        const max = Math.max(...numbers);
-        const block = getBlock(atomicNumber);
-        setClaimable((10 * (max / block)).toFixed(2));
-      })
-      .catch((error) => console.error(error));
-  }, [mx, mint]);
-
-  const getNftData = async () => {
-    setLoading(true);
-    if (!mint) {
-      return;
-    }
     try {
-      mx.nfts()
-        .findByMint({ mintAddress: mint as PublicKey })
-        .then((nft) => {
-          console.log("nft data on stake page:", nft);
-          setNftData(nft);
-          console.log("Data", nft.json);
-          connection
-            .getTokenLargestAccounts(nft.mint.address)
-            .then((accounts) => setNftTokenAccount(accounts.value[0].address));
-        });
+      console.log("Fetching mint...");
+      const nft = await mx
+        .nfts()
+        .findByMint({ mintAddress: new PublicKey(mint) });
+      const res = await fetch(nft.uri);
+      const json = await res.json();
+      const atomicNumber = parseInt(json.attributes[0].value);
+      setMetadata(json);
+      const numbers = getBlockAtomicNumbers(atomicNumber);
+      const max = Math.max(...numbers);
+      setMaxAtomicNumber(max);
+      const block = getBlock(atomicNumber);
+      setBlockNumber(block);
+      setClaimable((10 * (max / block)).toFixed(2));
+      setNftData(nft);
+      console.log("Fetched mint...", nft);
+      return nft;
     } catch (error) {
-      console.log("error getting nft:", error);
-    } finally {
+      console.error(error);
+    }
+  }, [mint, mx]);
+
+  const getTokenAccount = useCallback(
+    async (_nftData: any) => {
+      if (!_nftData) return;
+      try {
+        console.log("Fetching token...", _nftData);
+        const accounts = await connection.getTokenLargestAccounts(
+          _nftData.mint.address
+        );
+        setNftTokenAccount(accounts.value[0].address);
+        console.log("Fetched token...", accounts.value[0].address);
+        return accounts.value[0].address;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [connection]
+  );
+
+  const checkStakingStatus = useCallback(
+    async (_nftTokenAccount: PublicKey) => {
+      if (
+        !walletAdapter.connected ||
+        !walletAdapter.publicKey ||
+        !_nftTokenAccount ||
+        !workspace.program
+      ) {
+        console.log(
+          "Not checking status...",
+          walletAdapter.publicKey,
+          _nftTokenAccount
+        );
+        return;
+      }
+      try {
+        console.log("Checking status...");
+        const account = await getStakeAccount(
+          walletAdapter.publicKey,
+          _nftTokenAccount,
+          workspace.program
+        );
+        const days = Math.floor(
+          (new Date().getTime() -
+            new Date(account.lastStakeRedeem.toNumber() * 1000).getTime()) /
+            86400000
+        );
+        setStakingDays(days);
+        setTotalEarned(account.totalEarned.toNumber() / 100);
+        // console.log("total earned:", account.totalEarned.toNumber());
+        // console.log("days:", days);
+        // console.log("stake account:", account);
+        // console.log("stakeState:", account.stakeState);
+        // console.log(
+        //   "lastStakeRedeem:",
+        //   new Date(account.lastStakeRedeem.toNumber() * 1000)
+        // );
+        // console.log(
+        //   "stakeStartTime:",
+        //   new Date(account.stakeStartTime.toNumber() * 1000)
+        // );
+        // console.log("tokenAccount:", account.tokenAccount?.toBase58());
+        // console.log("userPubkey:", account.userPubkey?.toBase58());
+        // console.log("isInitialized:", account.isInitialized);
+        setIsStaked(account.stakeState.staked);
+        console.log("Checked status...");
+      } catch (error) {
+        console.log("error:", error);
+      }
+    },
+    [walletAdapter.connected, walletAdapter.publicKey, workspace.program]
+  );
+
+  useEffect(() => {
+    const calls = async () => {
+      const _nft = await getMintAccount();
+      const _token = await getTokenAccount(_nft);
+      await checkStakingStatus(_token as PublicKey);
       setLoading(false);
+    };
+    if (loading) {
+      calls();
     }
-  };
-
-  const checkStakingStatus = useCallback(async () => {
-    if (
-      !walletAdapter.connected ||
-      !walletAdapter.publicKey ||
-      !nftTokenAccount ||
-      !workspace.program
-    ) {
-      console.log(
-        "Not checking status...",
-        walletAdapter.publicKey,
-        nftTokenAccount
-      );
-      return;
-    }
-    try {
-      console.log("Checking status...");
-      const account = await getStakeAccount(
-        walletAdapter.publicKey,
-        nftTokenAccount,
-        workspace.program
-      );
-      const days = Math.floor(
-        (new Date().getTime() -
-          new Date(account.lastStakeRedeem.toNumber() * 1000).getTime()) /
-          86400000
-      );
-      setStakingDays(days);
-      setTotalEarned(account.totalEarned.toNumber());
-      // console.log("total earned:", account.totalEarned.toNumber());
-      // console.log("days:", days);
-      // console.log("stake account:", account);
-      // console.log("stakeState:", account.stakeState);
-      // console.log(
-      //   "lastStakeRedeem:",
-      //   new Date(account.lastStakeRedeem.toNumber() * 1000)
-      // );
-      // console.log(
-      //   "stakeStartTime:",
-      //   new Date(account.stakeStartTime.toNumber() * 1000)
-      // );
-      // console.log("tokenAccount:", account.tokenAccount?.toBase58());
-      // console.log("userPubkey:", account.userPubkey?.toBase58());
-      // console.log("isInitialized:", account.isInitialized);
-      setIsStaked(account.stakeState.staked);
-    } catch (error) {
-      console.log("error:", error);
-    }
-  }, [connection, nftTokenAccount, walletAdapter]);
+  }, []);
 
   useEffect(() => {
-    getNftData();
-  }, [connection, mint, walletAdapter]);
-
-  useEffect(() => {
-    checkStakingStatus();
-  }, [walletAdapter, connection, nftData, staking, claiming, unstaking]);
+    if (!loading && !staking && !claiming && !unstaking) {
+      checkStakingStatus(nftTokenAccount as PublicKey);
+    }
+  }, [staking, claiming, unstaking]);
 
   const sendAndConfirmTransaction = useCallback(
     async (transaction: Transaction) => {
@@ -197,7 +227,7 @@ const NewMint = () => {
           },
           "finalized"
         );
-        await checkStakingStatus();
+        await checkStakingStatus(nftTokenAccount as PublicKey);
       } catch (error) {
         console.log(error);
       }
@@ -214,7 +244,12 @@ const NewMint = () => {
         !nftTokenAccount ||
         !workspace.program
       ) {
-        alert("Please connect your wallet");
+        toast({
+          title: "Something went wrong!",
+          status: "error",
+          duration: 1000,
+          isClosable: true,
+        });
         return;
       }
 
@@ -235,6 +270,7 @@ const NewMint = () => {
           .accounts({
             nftTokenAccount: nftTokenAccount,
             nftMint: nftData!.mint.address,
+            // @ts-ignore
             nftEdition: nftData!.edition.address,
             metadataProgram: METADATA_PROGRAM_ID,
             stakeState: stakeAccount,
@@ -260,7 +296,12 @@ const NewMint = () => {
         !nftTokenAccount ||
         !workspace.program
       ) {
-        alert("Please connect your wallet");
+        toast({
+          title: "Something went wrong!",
+          status: "error",
+          duration: 1000,
+          isClosable: true,
+        });
         return;
       }
 
@@ -312,7 +353,12 @@ const NewMint = () => {
         !nftTokenAccount ||
         !workspace.program
       ) {
-        alert("Please connect your wallet");
+        toast({
+          title: "Something went wrong!",
+          status: "error",
+          duration: 1000,
+          isClosable: true,
+        });
         return;
       }
 
@@ -343,6 +389,7 @@ const NewMint = () => {
           .accounts({
             nftTokenAccount: nftTokenAccount,
             nftMint: nftData!.mint.address,
+            // @ts-ignore
             nftEdition: nftData!.edition.address,
             metadataProgram: METADATA_PROGRAM_ID,
             stakeMint: STAKE_MINT,
@@ -408,12 +455,15 @@ const NewMint = () => {
                   {"Reward are calculated as follow:"}
                 </Text>
                 <Text color="text" textAlign="center">
-                  {"100 x N x B = $TOS / day"}
+                  {"10 x N x B = TOS / day"}
                 </Text>
                 <Text color="text" mt="2" textAlign="center" fontSize={"12"}>
-                  {"\n B: Block Number of the element above"}
+                  {"\n B: Block Number of the element above times 10"}
                   <br />
                   {"\n N: Atomic Number of Block B randomly selected"}
+                  {`\n Here is the example with highest atomic number (${maxAtomicNumber}) of the block(${blockNumber}) can make you upto ${
+                    10 * (maxAtomicNumber / blockNumber)
+                  } TOS`}
                 </Text>
               </AccordionPanel>
             </AccordionItem>
@@ -440,7 +490,7 @@ const NewMint = () => {
             textAlign={"center"}
             marginTop="4"
           >
-            {`${totalEarned} $TOS`}
+            {`${totalEarned} TOS`}
           </Text>
           <Text
             color="grey"
@@ -449,7 +499,7 @@ const NewMint = () => {
             textAlign={"center"}
             marginTop="2"
           >
-            {`upto ${claimable} $TOS claimable / day`}
+            {`upto ${claimable} TOS claimable / day`}
           </Text>
         </Flex>
         {isStaked ? (

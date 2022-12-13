@@ -14,6 +14,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PhantomWalletName } from "@solana/wallet-adapter-wallets";
 import React, { useCallback, useEffect, useState } from "react";
 import usePhantom from "../hooks/usePhantom";
+import useWalletNfts from "../hooks/useWalletNfts";
 import { truncateAddress } from "../utils";
 
 interface WithChildren {
@@ -40,6 +41,7 @@ const ConnectWalletButton: React.FC<Props> = ({
   const [isMobileOrTablet] = useMediaQuery("(min-width: 600px)");
   const isWindowContext = typeof window !== "undefined";
   const origin = isWindowContext && window.origin;
+  const { isLoading } = useWalletNfts(false);
 
   useEffect(() => {}, [isPhantom]);
 
@@ -74,12 +76,20 @@ const ConnectWalletButton: React.FC<Props> = ({
     }
   }, [connected]);
   const disconnectWallet = useCallback(async () => {
+    if (isLoading) {
+      return toast({
+        title: `Syncing your NFTs`,
+        description: `Don't disconnect while syncing.`,
+        duration: 5000,
+        status: "info",
+      });
+    }
     if (connected) {
       await disconnect();
       onClose();
       localStorage.removeItem("walletCmdNfts");
     }
-  }, [connected]);
+  }, [connected, isLoading]);
   const copyAddress = useCallback(async () => {
     if (connected) {
       await navigator.clipboard.writeText(base58);
